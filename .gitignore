@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite database
+*.db
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# VS Code
+.vscode/
+
+# Mac system files
+.DS_Store
+
+# Kafka UI logs/config (optional)
+kui/logs/
+kui/*.log
+
+# Python test cache
+.pytest_cache/
+.coverage
+
+# Jupyter Notebook checkpoints (if any)
+.ipynb_checkpoints/
+
+# Environment variable files
+.env
