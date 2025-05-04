@@ -1,6 +1,8 @@
 import uuid
 import time
 import logging
+import threading
+import random
 
 from producers.producer_fedebom import engine as fedebom_engine
 from producers.producer_cmf import engine as cmf_engine
@@ -24,16 +26,25 @@ def run_full_flow():
 
     time.sleep(SLEEP_BETWEEN_SYSTEMS)
 
-    logger.info("➡️ CMF flow...")
-    cmf_engine.run_flow(correlation_id)
+    if random.random() < 0.5:
+        logger.info("➡️ CMF flow...")
+        cmf_engine.run_flow(correlation_id)
+        time.sleep(SLEEP_BETWEEN_SYSTEMS)
+    else:
+        logger.info("🛑 CMF flow skipped")
 
     time.sleep(SLEEP_BETWEEN_SYSTEMS)
 
-    logger.info("➡️ Reporting flow...")
-    reporting_engine.run_flow(correlation_id)
+    logger.info("➡️ Reporting and BCIS flows in parallel...")
 
-    logger.info("➡️ BCIS flow...")
-    bcis_engine.run_flow(correlation_id)
+    reporting_thread = threading.Thread(target=reporting_engine.run_flow, args=(correlation_id,))
+    bcis_thread = threading.Thread(target=bcis_engine.run_flow, args=(correlation_id,))
+
+    reporting_thread.start()
+    bcis_thread.start()
+
+    reporting_thread.join()
+    bcis_thread.join()
 
     logger.info(f"✅ Flow complete for correlation_id: {correlation_id}")
 
