@@ -232,20 +232,26 @@ distributed-tracing/
 │
 ├── producers/
 │   ├── producer_inventory.py
-│   ├── producer_payments.py
 │   ├── producer_orders.py
+│   ├── producer_payments.py
 │   └── producer_reporting.py
+│
+├── dashboard/
+│   ├── events_dashboard.py
+│   ├── spans_dashboard.py
+│   └── trace_dashboard.py
 │
 ├── kui/
 │   └── config.yml
 │
-# └── tests/
-#     ├── conftest.py
-#     ├── test_flow_engine.py
-#     └── test_parsers/
-#         ├── test_structured.py
-#         ├── test_orders.py
-#         └── test_payments.py
+├── tests/
+│   ├── test_flow_engine.py
+│   ├── test_parsers.py
+│   ├── test_consumer.py
+│   └── test_producers.py
+│
+├── notebook.ipynb
+└── generate_spans_and_traces.py
 ```
 
 ---
@@ -286,15 +292,58 @@ python orchestrator.py
 
 ---
 
-## 🧪 Run Tests
+## 📊 How to Generate Spans/Traces and View Dashboards
 
-```bash
-PYTHONPATH=. pytest tests/
+### 1. Generate Spans and Trace Summaries
+After running the consumer and orchestrator to populate the database, run:
+
+```sh
+python generate_spans_and_traces.py
+```
+This will materialize the `spans` and `trace_summary` tables in SQLite for dashboard analytics.
+
+### 2. Launch the Dashboards
+You can view the interactive dashboards using Streamlit. For example:
+
+```sh
+streamlit run dashboard/events_dashboard.py
 ```
 
----
+Or for the spans and trace dashboards:
 
+```sh
+streamlit run dashboard/spans_dashboard.py
+streamlit run dashboard/trace_dashboard.py
+```
 
+Each dashboard will open in your browser for interactive exploration.
+
+## 🧪 Testing
+
+This project includes comprehensive unit tests for the flow engine, log parsers, consumer logic, and producer logging functions.
+
+### How to Run All Tests
+
+First, ensure you are in your virtual environment and have installed the dependencies:
+
+```sh
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then, run all tests using pytest:
+
+```sh
+pytest --maxfail=1 --disable-warnings -v
+```
+
+Test files include:
+- `tests/test_flow_engine.py` — Flow engine logic
+- `tests/test_parsers.py` — Structured, orders, and payments log parsers
+- `tests/test_consumer.py` — Consumer event insertion, hybrid join, and parsing
+- `tests/test_producers.py` — Producer logging functions (inventory, payments)
+
+All tests should pass (green) if the system is set up correctly.
 
 ---
 
