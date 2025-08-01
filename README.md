@@ -1,7 +1,34 @@
-
 # 🧠 Distributed Log Normalization & Traceability POC
 
-This proof of concept (POC) demonstrates how to ingest logs from distributed systems — even when they follow inconsistent formats — and normalize them into a unified schema for observability, traceability, and historical analysis.
+## 🎯 Project Purpose & Goals
+This project demonstrates how to build a robust, real-world distributed tracing and log normalization pipeline using Python, Kafka, and SQLite. It showcases techniques for ingesting, normalizing, and analyzing logs from heterogeneous systems—structured and unstructured—enabling full traceability and observability across distributed architectures.
+
+## ✨ Features
+- Ingests logs from multiple distributed systems (structured JSON and unstructured text)
+- Normalizes diverse log formats into a unified schema
+- Joins multi-part logs (e.g., checkpoint and error details)
+- Stores normalized events in SQLite for easy querying and analytics
+- Provides interactive dashboards for event, span, and trace visualization (Streamlit + Plotly)
+- Includes a modular flow engine for simulating system behavior and failures
+- Kafka UI for inspecting topic messages
+- Test coverage for core modules
+
+## 🛠 Tech Stack
+- Python 3.9+
+- Apache Kafka (via Docker Compose)
+- SQLite
+- Streamlit (dashboards)
+- Plotly (visualizations)
+- pandas (data analysis)
+- pytest (testing)
+
+## 🚀 Demo
+<!--
+Add screenshots or GIFs of your dashboards and/or sample queries here.
+Example:
+![Events Dashboard Screenshot](docs/events_dashboard.png)
+![Trace Dashboard Screenshot](docs/trace_dashboard.png)
+-->
 
 ---
 
@@ -22,7 +49,7 @@ This system:
 
 ```
 +-------------------+      +------------------+      +------------------+      +-------------------+
-|   fedebom         |      |      cmf         |      |      bcis        |      |    reporting      |
+|   inventory         |      |      payments         |      |      orders        |      |    reporting      |
 +-------------------+      +------------------+      +------------------+      +-------------------+
         |                          |                        |                          |
         +-----------+--------------+------------------------+--------------------------+
@@ -58,7 +85,7 @@ This system:
 
 | Field           | Description                                |
 |----------------|--------------------------------------------|
-| `system_id`     | Originating system (e.g. `fedebom`, `bcis`) |
+| `system_id`     | Originating system (e.g. `inventory`, `orders`) |
 | `checkpoint_id` | Processing stage or label                  |
 | `timestamp`     | Event timestamp (ISO format)               |
 | `status`        | `SUCCESS` or `FAILURE`                     |
@@ -73,23 +100,23 @@ Each system (producer) represents a different real-world logging style, allowing
 
 | System       | Format             | Failure Detail             | Notes                                                                 |
 |--------------|--------------------|-----------------------------|-----------------------------------------------------------------------|
-| `fedebom`    | Structured JSON     | Separate JSON log           | Emits a checkpoint log, and if failed, emits a second log with error detail |
+| `inventory`    | Structured JSON     | Separate JSON log           | Emits a checkpoint log, and if failed, emits a second log with error detail |
 | `reporting`  | Structured JSON     | Inline in log               | Emits one structured log that includes both the event and error fields |
-| `bcis`       | Unstructured text   | Inline in log               | Emits plain-text logs with both status and failure reason included    |
-| `cmf`        | Unstructured text   | Separate plain-text log     | Similar to `fedebom` but logs are in plain text instead of JSON       |
+| `orders`       | Unstructured text   | Inline in log               | Emits plain-text logs with both status and failure reason included    |
+| `payments`        | Unstructured text   | Separate plain-text log     | Similar to `inventory` but logs are in plain text instead of JSON       |
 
 ---
 
 ## 🗂 Supported Systems and Log Examples
 
-### ✅ `fedebom` (structured, multi-log join)
+### ✅ `inventory` (structured, multi-log join)
 - **Main log:** JSON with `status` and `checkpoint`
 - **Failure reason:** separate log with same `correlation_id`
 
 **Checkpoint log:**
 ```
 {
-  "system": "fedebom",
+  "system": "inventory",
   "checkpoint": "CHECKPOINT_1",
   "status": "FAILURE",
   "timestamp": "2025-05-04T10:30:00",
@@ -100,7 +127,7 @@ Each system (producer) represents a different real-world logging style, allowing
 **Separate error log:**
 ```
 {
-  "system": "fedebom",
+  "system": "inventory",
   "correlation_id": "abc-123",
   "failure_reason": "FAILURE_REASON_2"
 }
@@ -119,24 +146,24 @@ Each system (producer) represents a different real-world logging style, allowing
 ```
 
 
-### ✅ `cmf` (unstructured, multi-log join)
+### ✅ `payments` (unstructured, multi-log join)
 **Checkpoint log:**
 ```
-2025-05-04T10:32:00 CMF: CMF_CHECKPOINT_2 - FAILURE (ID: def-456)
+2025-05-04T10:32:00 PAYMENTS: PAYMENTS_CHECKPOINT_2 - FAILURE (ID: def-456)
 ```
 
 **Separate error log:**
 ```
-2025-05-04T10:32:01 CMF CMF_ERROR: (ID: def-456) - CMF_FAILURE_REASON_1
+2025-05-04T10:32:01 PAYMENTS PAYMENTS_ERROR: (ID: def-456) - PAYMENTS_FAILURE_REASON_1
 ```
 
-### ✅ `bcis` (unstructured, single-log)
+### ✅ `orders` (unstructured, single-log)
 **Checkpoint log:**
 ```
-2025-05-04T10:30:00 BCIS: CHECKPOINT_B - FAILURE (ID: abc-123) - FAILURE_REASON_X
+2025-05-04T10:30:00 ORDER: CHECKPOINT_B - FAILURE (ID: abc-123) - FAILURE_REASON_X
 ```
 ```
-2025-05-04T10:30:00 BCIS: CHECKPOINT_A - SUCCESS (ID: abc-123)
+2025-05-04T10:30:00 ORDER: CHECKPOINT_A - SUCCESS (ID: abc-123)
 ```
 ---
 
@@ -145,7 +172,7 @@ Example Flow from Orchestrator:
 ```
 1. Orchestrator starts and triggers a new correlation_id
 
-2. Fedebom system begins:
+2. inventory system begins:
    → INITIATED (SUCCESS)
    → CHECKPOINT_1 (FAILURE)
      ↳ [Failure reason emitted separately]
@@ -154,22 +181,22 @@ Example Flow from Orchestrator:
    → FINALIZED (SUCCESS)
 
 3. Orchestrator randomly chooses the next downstream path:
-   a. Fedebom → CMF → Reporting and BCIS in parallel
-   b. Fedebom → Reporting and BCIS in parallel
+   a. inventory → payments → Reporting and ORDER in parallel
+   b. inventory → Reporting and ORDER in parallel
 
-4. If CMF is chosen:
-   → CMF: CMF_CHECKPOINT_1 (SUCCESS)
-   → CMF: CMF_CHECKPOINT_2 (FAILURE)
-     ↳ CMF_ERROR log sent separately with failure reason
-   → CMF: CMF_CHECKPOINT_2 (SUCCESS)
-   → CMF: CMF_FINALIZED (SUCCESS)
+4. If PAYMENTS is chosen:
+   → PAYMENTS: PAYMENTS_CHECKPOINT_1 (SUCCESS)
+   → PAYMENTS: PAYMENTS_CHECKPOINT_2 (FAILURE)
+     ↳ PAYMENTS_ERROR log sent separately with failure reason
+   → PAYMENTS: PAYMENTS_CHECKPOINT_2 (SUCCESS)
+   → PAYMENTS: PAYMENTS_FINALIZED (SUCCESS)
 
 5. Reporting system logs:
    → REPORTING_INITIATED → REPORTING_CHECKPOINT_1 → ... → REPORTING_FINALIZED  
 
 
-6. BCIS system logs:
-   → BCIS_INITIALIZED → BCIS_CHECKPOINT_1 → ... → BCIS_FINALIZED  
+6. ORDER system logs:
+   → ORDER_INITIALIZED → ORDER_CHECKPOINT_1 → ... → ORDER_FINALIZED  
 
 
 7. Each step emits logs to Kafka → parsed → normalized → stored in SQLite
@@ -200,13 +227,13 @@ distributed-tracing/
 ├── log_parsers/
 │   ├── __init__.py
 │   ├── structured.py
-│   ├── bcis.py
-│   └── cmf.py
+│   ├── orders.py
+│   └── payments.py
 │
 ├── producers/
-│   ├── producer_fedebom.py
-│   ├── producer_cmf.py
-│   ├── producer_bcis.py
+│   ├── producer_inventory.py
+│   ├── producer_payments.py
+│   ├── producer_orders.py
 │   └── producer_reporting.py
 │
 ├── kui/
@@ -217,8 +244,8 @@ distributed-tracing/
 #     ├── test_flow_engine.py
 #     └── test_parsers/
 #         ├── test_structured.py
-#         ├── test_bcis.py
-#         └── test_cmf.py
+#         ├── test_orders.py
+#         └── test_payments.py
 ```
 
 ---
@@ -284,3 +311,9 @@ SELECT * FROM events;
 import pandas as pd
 df = pd.read_sql("SELECT * FROM events", sqlite3.connect("db/event_history.db"))
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

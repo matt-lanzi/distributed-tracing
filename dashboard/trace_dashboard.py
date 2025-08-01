@@ -23,9 +23,9 @@ spans = pd.read_sql_query(
     WHERE correlation_id = ?
     ORDER BY 
       CASE system_id
-        WHEN 'fedebom' THEN 1
-        WHEN 'cmf' THEN 2
-        WHEN 'bcis' THEN 3
+        WHEN 'inventory' THEN 1
+        WHEN 'payments' THEN 2
+        WHEN 'orders' THEN 3
         WHEN 'reporting' THEN 4
         ELSE 5
       END

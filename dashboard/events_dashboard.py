@@ -28,9 +28,9 @@ filtered_events = events[
 
 # System ordering to reduce overlap
 system_order = {
-    "fedebom": 1,
-    "cmf": 2,
-    "bcis": 3,
+    "inventory": 1,
+    "payments": 2,
+    "orders": 3,
     "reporting": 4
 }
 filtered_events["system_order"] = filtered_events["system_id"].map(system_order).fillna(99).astype(int)

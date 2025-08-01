@@ -34,11 +34,11 @@ filtered_spans["duration"] = (filtered_spans["end_time"] - filtered_spans["start
 # Adjust draw order: sort by duration descending
 filtered_spans = filtered_spans.sort_values(by=["correlation_id", "start_time", "duration"], ascending=[True, True, False])
 
-# Custom color map for improved contrast between reporting and bcis
+# Custom color map for improved contrast between reporting and order
 color_discrete_map = {
-    "fedebom": "#1f77b4",
-    "cmf": "#ff7f0e",
-    "bcis": "#2ca02c",        # green
+    "inventory": "#1f77b4",
+    "payments": "#ff7f0e",
+    "orders": "#2ca02c",        # green
     "reporting": "#d62728"     # red
 }
 

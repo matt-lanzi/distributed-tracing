@@ -35,9 +35,9 @@ GROUP BY correlation_id, system_id
 ORDER BY
     correlation_id,
     CASE system_id
-        WHEN 'fedebom' THEN 1
-        WHEN 'cmf' THEN 2
-        WHEN 'bcis' THEN 3
+        WHEN 'inventory' THEN 1
+        WHEN 'payments' THEN 2
+        WHEN 'orders' THEN 3
         WHEN 'reporting' THEN 4
         ELSE 5
     END;
@@ -56,7 +56,7 @@ WITH trace_start AS (
         correlation_id,
         start_time AS trace_start
     FROM spans
-    WHERE system_id = 'fedebom'
+    WHERE system_id = 'inventory'
 ),
 trace_end AS (
     SELECT

@@ -13,19 +13,19 @@ producer = KafkaProducer(
     value_serializer=lambda v: v.encode('utf-8')
 )
 
-# ---------- BCIS Configuration ----------
+# ---------- ORDER Configuration ----------
 CHECKPOINTS = [
-    "BCIS_INITIALIZED",
-    "BCIS_CHECKPOINT_1",
-    "BCIS_CHECKPOINT_2",
-    "BCIS_CHECKPOINT_3",
-    "BCIS_FINALIZED"
+    "ORDER_INITIALIZED",
+    "ORDER_CHECKPOINT_1",
+    "ORDER_CHECKPOINT_2",
+    "ORDER_CHECKPOINT_3",
+    "ORDER_FINALIZED"
 ]
 
 FAILURE_REASONS = [
-    "BCIS_FAILURE_REASON_1",
-    "BCIS_FAILURE_REASON_2",
-    "BCIS_FAILURE_REASON_3"
+    "ORDER_FAILURE_REASON_1",
+    "ORDER_FAILURE_REASON_2",
+    "ORDER_FAILURE_REASON_3"
 ]
 
 # ---------- Logging Function ----------
@@ -33,16 +33,16 @@ def log_checkpoint(correlation_id, checkpoint, status, failure_reason=None):
     timestamp = time.strftime('%Y-%m-%dT%H:%M:%S')
 
     if status == "FAILURE" and failure_reason:
-        log_line = f"[ERROR] {timestamp} BCIS: {checkpoint} - FAILURE (ID: {correlation_id}) - {failure_reason}"
+        log_line = f"[ERROR] {timestamp} ORDER: {checkpoint} - FAILURE (ID: {correlation_id}) - {failure_reason}"
     else:
-        log_line = f"[INFO] {timestamp} BCIS: {checkpoint} - SUCCESS (ID: {correlation_id})"
+        log_line = f"[INFO] {timestamp} ORDER: {checkpoint} - SUCCESS (ID: {correlation_id})"
 
     producer.send("raw-logs", value=log_line)
-    logger.info(f"📝 BCIS log sent: {log_line}")
+    logger.info(f"📝 ORDER log sent: {log_line}")
 
 # ---------- Flow Engine ----------
 engine = FlowEngine(
-    system_name="bcis",
+    system_name="orders",
     checkpoints=CHECKPOINTS,
     failure_reasons=FAILURE_REASONS,
     log_checkpoint_fn=log_checkpoint,
